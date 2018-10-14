@@ -1,0 +1,222 @@
+#image: docker:1.13-git
+image: docker:18
+
+services:
+  - postgres:latest
+
+variables:
+  RAILS_ENV: 'test'
+  CONTAINER_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME-test"
+#  CONTAINER_FEATURE_IMAGE_NAME: "$CI_BUILD_REF_NAME-test"
+  CONTAINER_IMAGE_RELEASE_NAME: "$CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME-latest"
+
+#  CONTAINER_IMAGE_DOCUMENTATION_NAME: "$CI_BUILD_REF_NAME-docs"
+#  CONTAINER_IMAGE_DOCUMENTATION_PATH: "$CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME-docs"
+  LANG: C.UTF-8
+
+stages:
+  - build
+  - quality
+  - test
+  - docs
+  - release
+  - deploy
+
+.docker-login: &docker-login
+  before_script:
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN  $CI_REGISTRY
+
+.artifacts-always: &artifacts-always
+  artifacts:
+    when: always
+
+#before_script:
+#  - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+
+build-image:
+  <<: *artifacts-always
+  <<: *docker-login
+  stage: build
+  tags:
+    - docker
+  script:
+    - timestamp=`date --rfc-2822`
+    - "echo 'Docker Image created:' $timestamp > BUILD.txt"
+    - "echo '' >> BUILD.txt"
+
+    - "echo '$CI_REGISTRY_IMAGE' $CI_REGISTRY_IMAGE >> BUILD.txt"
+    - "echo '$CI_BUILD_REF_NAME' $CI_BUILD_REF_NAME >> BUILD.txt"
+    - "echo '$CI_COMMIT_SHA' $CI_COMMIT_SHA >> BUILD.txt"
+    - "echo '' >> BUILD.txt"
+
+    - "echo '$CONTAINER_IMAGE_NAME:' $CONTAINER_IMAGE_NAME >> BUILD.txt"
+    - "echo '$CONTAINER_IMAGE_RELEASE_NAME:' $CONTAINER_IMAGE_RELEASE_NAME >> BUILD.txt"
+    - "echo '$CONTAINER_FEATURE_IMAGE_NAME:' $CONTAINER_FEATURE_IMAGE_NAME >> BUILD.txt"
+    - "echo '' >> BUILD.txt"
+
+    - "echo 'Project URL:' $CI_PROJECT_URL >> BUILD.txt"
+    - "echo '' >> BUILD.txt"
+    - "echo 'Build with Docker Version' $DOCKER_VERSION 'on CI_RUNNER ' $CI_RUNNER_DESCRIPTION >> BUILD.txt"
+    - "echo '' >> BUILD.txt"
+
+    - "echo 'Generated BUILD.txt:'"
+    - cat BUILD.txt
+    - docker build -f Dockerfile --pull --tag $CONTAINER_IMAGE_NAME .
+    - docker push $CONTAINER_IMAGE_NAME
+    - docker pull $CONTAINER_IMAGE_NAME
+    - docker inspect --format='{{index .RepoDigests 0}}' $CONTAINER_IMAGE_NAME
+  allow_failure: false
+  artifacts:
+    paths:
+    - BUILD.txt
+    expire_in: 1 week
+  cache:
+    key: "$CI_COMMIT_REF_SLUG" # per-branch caching
+    paths:
+      - tmp/cache/assets # used by sprockets for assets
+
+#test-hamllint:
+#  tags:
+#    - docker
+#  stage: quality
+#  script:
+#  - docker run -e RAILS_ENV=test -e DOMAIN_NAME=docker-tests.example.com -e DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres $CONTAINER_IMAGE_NAME bundle exec haml-lint app/views/
+#  allow_failure: true
+
+test-reek-codesmell:
+  <<: *artifacts-always
+  image: "$CONTAINER_IMAGE_NAME"
+  tags:
+    - docker
+  stage: test
+  script:
+  - bundle exec reek
+#  - docker run -e RAILS_ENV=test -e DOMAIN_NAME=docker-tests.example.com -e DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres $CONTAINER_IMAGE_NAME bundle exec reek
+
+test-todo-notes:
+  <<: *artifacts-always
+  image: "$CONTAINER_IMAGE_NAME"
+  tags:
+    - docker
+  stage: test
+  variables:
+    # shared rails app configs
+    DOMAIN_NAME: docker-tests.example.com
+  script:
+  - export DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres
+  - bundle exec rails notes
+  allow_failure: true
+
+test-specs:
+  image: "$CONTAINER_IMAGE_NAME"
+  tags:
+    - docker
+  stage: test
+  variables:
+    # shared rails app configs
+    DATABASE_URL: postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres
+    DOMAIN_NAME: docker-tests.example.com
+    DATABASE_CLEANER_ALLOW_REMOTE_DATABASE_URL: 'true'
+  script:
+  - export DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres
+  - bundle exec rake db:migrate
+  - bundle exec rspec . --seed 62376
+#  - docker run -e RAILS_ENV=test -e DOMAIN_NAME=docker-tests.example.com -e DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres $CONTAINER_IMAGE_NAME bundle exec rake db:migrate
+#  - docker run -e RAILS_ENV=test -e DOMAIN_NAME=docker-tests.example.com -e  -e DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres $CONTAINER_IMAGE_NAME bundle exec rspec . --seed 62376
+  allow_failure: false
+  artifacts:
+    when: always
+    paths:
+    - doc/debug_doc/code_coverage/
+    expire_in: 3h
+
+test-specs-rnd-seed:
+#  <<: *artifacts-always
+  image: "$CONTAINER_IMAGE_NAME"
+  tags:
+    - docker
+  stage: test
+  variables:
+    # shared rails app configs
+    DOMAIN_NAME: docker-tests.example.com
+
+    DATABASE_CLEANER_ALLOW_REMOTE_DATABASE_URL: 'true'
+  script:
+  - export DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres
+  - bundle exec rake db:migrate
+  - bundle exec rspec . --order rand
+  allow_failure: false
+
+test-rubocop:
+  <<: *artifacts-always
+  image: "$CONTAINER_IMAGE_NAME"
+  tags:
+    - docker
+  stage: test
+  script:
+  - bundle exec rubocop
+  allow_failure: false
+
+test-bundle-audit:
+  <<: *artifacts-always
+  image: "$CONTAINER_IMAGE_NAME"
+  stage: test
+  services: []
+  tags:
+    - docker
+#  variables:
+    # needs a DB URL, but does not use the connection
+#    FAKE_DATABASE_URL: "mysql2://no-user:no-pwd@anyhost:3306/any-db"
+  script:
+  - bundle exec bundle-audit check --update
+  allow_failure: false
+
+docs-build-doc:
+  image: "$CONTAINER_IMAGE_NAME"
+  stage: docs
+  services: []
+  tags:
+    - docker
+#  variables:
+    # needs a DB URL, but does not use the connection
+#    FAKE_DATABASE_URL: "mysql2://no-user:no-pwd@anyhost:3306/any-db"
+  script:
+    - export DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/FAKE_DATABASE
+    - bundle exec i18n-tasks unused > doc/debug_doc/translations_unused.txt
+    - bundle exec i18n-tasks missing > doc/debug_doc/translations_missing.txt
+
+    - script/rails routes > doc/debug_doc/app_routes.txt
+    - script/rails stats > doc/debug_doc/app_stats.txt
+    - script/rails notes > doc/debug_doc/app_notes.txt
+    - script/rails middleware > doc/debug_doc/app_middleware_stack.txt
+    - script/rails about > doc/debug_doc/app_about.txt
+
+    #  - ./generate_debug_doc.sh
+  allow_failure: true
+  artifacts:
+    when: always
+    paths:
+    - doc/debug_doc/
+    expire_in: 3h
+
+release-image:
+  <<: *docker-login
+  tags:
+    - docker
+  stage: release
+  script:
+    - docker pull $CONTAINER_IMAGE_NAME
+    - docker tag $CONTAINER_IMAGE_NAME $CONTAINER_IMAGE_RELEASE_NAME
+    - docker push $CONTAINER_IMAGE_RELEASE_NAME
+#  only:
+#    - master
+
+#deploy_production:
+#  stage: deploy
+#  environment:
+#    name: production
+#    url: https://demo.e-request.ch
+#  script:
+#    - cd ctron && ./ctron_exec_prod.sh
+#  only:
+#    - master
