@@ -1,0 +1,21 @@
+<h2>Documentation</h2>
+
+<% if params[:debug] %>
+  <%= debug(@folders)%>
+  <%= debug(@grouped_links)%>
+<% end %>
+
+<% @grouped_links.each do |group, links| %>
+
+  <h3>Group: <%= group %></h3>
+
+  <% links.each do |link| %>
+    <%#= link.inspect %>
+    <ul>
+      <li>
+        <%= link_to link[:title], link[:url], title: link[:group], target: 'content_frame' %>
+      </li>
+    </ul>
+
+  <% end %>
+<% end %>
