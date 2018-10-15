@@ -1,0 +1,73 @@
+inherit_from: .rubocop_todo.yml
+
+Rails:
+  Enabled: true
+
+AllCops:
+  TargetRubyVersion: 2.5
+  Exclude:
+    - Gemfile*
+    - script/**/*
+    - bin/**/*
+    - app/admin/*
+    - db/schema.rb
+    - db/migrate/*
+    - spec/rails_helper.rb
+#    - node_modules/**/*
+
+
+########################################################################################################################
+### DISABLED Rubocop Rules below
+########################################################################################################################
+
+Metrics/LineLength:
+  Description: 'Limit lines to 80 characters.'
+  StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#80-character-limits'
+  Enabled: false
+
+# Offense count: 35
+Style/AsciiComments:
+  Enabled: false
+
+# Offense count: 122
+Style/Documentation:
+  Enabled: false
+
+# Offense count: 30
+# Configuration parameters: EnforcedStyle, SupportedStyles.
+# SupportedStyles: nested, compact
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+Metrics/MethodLength:
+  Description: 'Avoid methods longer than 30 lines of code.'
+  StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#short-methods'
+  Enabled: true
+  Max: 30
+
+Lint/ScriptPermission:
+  Description: 'Grant script file execute permission.'
+  Enabled: false
+
+########################################################################################################################
+# CODE QUALTIY Enforcement - Do not change this - but update your code to pass
+########################################################################################################################
+
+Metrics/ClassLength:
+  Max: 120
+  CountComments: false
+
+Metrics/AbcSize:
+  Max: 25
+
+########################################################################################################################
+# Allowed Exclusions below - won't fix
+########################################################################################################################
+
+# Offense count: 22
+# Configuration parameters: CountComments, ExcludedMethods.
+Metrics/BlockLength:
+  Max: 50
+  Exclude:
+    - 'config/routes.rb'
+    - 'spec/**/*'
