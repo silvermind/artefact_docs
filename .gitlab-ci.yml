@@ -198,6 +198,7 @@ release-image:
 
 
 collect-docs:
+  <<: *artifacts-always
   image: "$CONTAINER_IMAGE_NAME"
   stage: collect-docs
   services: []
@@ -219,12 +220,12 @@ collect-docs:
     - echo "IT WORKS" > tmp/app_about.txt
 
     #  - ./generate_debug_doc.sh
-  allow_failure: true
+  allow_failure: false
   artifacts:
     when: always
-    paths:
-    - doc/debug_doc/
-    expire_in: 3h
+#    paths:
+#    - doc/debug_doc/
+#    expire_in: 3h
 
 
 # Push the Branche :latest image only if all Specs have been passed.
@@ -261,7 +262,7 @@ build-docs:
     - docker pull $CONTAINER_IMAGE_DOCUMENTATION_PATH
 #    - docker inspect --format='{{index .RepoDigests 0}}' $CONTAINER_IMAGE_DOCUMENTATION_PATH
 
-  allow_failure: true
+  allow_failure: false
 #  only:
 #    - develop
 
@@ -309,7 +310,7 @@ deploy-docs:
     # Execute Deploy Script on Dev Server
 #    - ssh default@i.dev.youngsolutions.ch /home/default/deploy_documentation_script.sh $CONTAINER_IMAGE_DOCUMENTATION_NAME
 
-  allow_failure: true
+  allow_failure: false
 #  only:
 #    - develop
 
