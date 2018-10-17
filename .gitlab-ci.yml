@@ -217,6 +217,7 @@ collect-docs:
 #    - script/rails notes > doc/debug_doc/app_notes.txt
 #    - script/rails middleware > doc/debug_doc/app_middleware_stack.txt
 #    - script/rails about > doc/debug_doc/app_about.txt
+    - mkdir ./tmp
     - echo "IT WORKS" > tmp/app_about.txt
 
     #  - ./generate_debug_doc.sh
@@ -245,6 +246,7 @@ build-docs:
 #    name: Develop Doc Preview
 #    url: https://docs.dev.youngsolutions.ch
   script:
+    - mkdir ./tmp
     - ls -la ./tmp
     - mkdir ./static-html-docs
     # copy frameset and build infos
