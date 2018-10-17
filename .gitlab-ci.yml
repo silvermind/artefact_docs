@@ -197,7 +197,7 @@ release-image:
 #    - master
 
 
-docs-build-doc:
+collect-docs:
   image: "$CONTAINER_IMAGE_NAME"
   stage: collect-docs
   services: []
@@ -207,15 +207,16 @@ docs-build-doc:
     # needs a DB URL, but does not use the connection
 #    FAKE_DATABASE_URL: "mysql2://no-user:no-pwd@anyhost:3306/any-db"
   script:
-    - export DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/FAKE_DATABASE
-    - bundle exec i18n-tasks unused > doc/debug_doc/translations_unused.txt
-    - bundle exec i18n-tasks missing > doc/debug_doc/translations_missing.txt
-
-    - script/rails routes > doc/debug_doc/app_routes.txt
-    - script/rails stats > doc/debug_doc/app_stats.txt
-    - script/rails notes > doc/debug_doc/app_notes.txt
-    - script/rails middleware > doc/debug_doc/app_middleware_stack.txt
-    - script/rails about > doc/debug_doc/app_about.txt
+#    - export DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/FAKE_DATABASE
+#    - bundle exec i18n-tasks unused > doc/debug_doc/translations_unused.txt
+#    - bundle exec i18n-tasks missing > doc/debug_doc/translations_missing.txt
+#
+#    - script/rails routes > doc/debug_doc/app_routes.txt
+#    - script/rails stats > doc/debug_doc/app_stats.txt
+#    - script/rails notes > doc/debug_doc/app_notes.txt
+#    - script/rails middleware > doc/debug_doc/app_middleware_stack.txt
+#    - script/rails about > doc/debug_doc/app_about.txt
+    - echo "IT WORKS" > tmp/app_about.txt
 
     #  - ./generate_debug_doc.sh
   allow_failure: true
@@ -233,7 +234,7 @@ docs-build-doc:
 # POC ONLY, may not get response if deployment failed!!
 #
 # SSH Infos see: http://docs.gitlab.com/ce/ci/ssh_keys/README.html
-deploy-docu-to-dev:
+build-docs:
   <<: *artifacts-always
   <<: *docker-login
   stage: build-docs
@@ -251,7 +252,7 @@ deploy-docu-to-dev:
 
     # collect all artifacts stored in tmp
 #    - cp -Rv ./coverage/ ./static-html-docs/
-#    - cp -Rv ./tmp/* ./static-html-docs/
+    - cp -Rv ./tmp/* ./static-html-docs/
 #    - cp ./rails_best_practices_output.html ./static-html-docs/rails_best_practices.html
 
     # build documentation container using Dockerfile.documentation with path ./static-html-docs
@@ -272,7 +273,7 @@ deploy-docu-to-dev:
 # POC ONLY, may not get response if deployment failed!!
 #
 # SSH Infos see: http://docs.gitlab.com/ce/ci/ssh_keys/README.html
-deploy-docu-to-dev:
+deploy-docs:
   <<: *artifacts-always
   <<: *docker-login
   stage: deploy-docs
