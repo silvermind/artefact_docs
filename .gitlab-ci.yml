@@ -21,7 +21,9 @@ stages:
   - test
   - release
   - deploy
-  - docs
+  - collect-docs
+  - build-docs
+  - deploy-docs
 
 .docker-login: &docker-login
   before_script:
@@ -197,7 +199,7 @@ release-image:
 
 docs-build-doc:
   image: "$CONTAINER_IMAGE_NAME"
-  stage: docs
+  stage: collect-docs
   services: []
   tags:
     - docker
@@ -234,7 +236,7 @@ docs-build-doc:
 deploy-docu-to-dev:
   <<: *artifacts-always
   <<: *docker-login
-  stage: docs
+  stage: build-docs
   tags:
     - docker
 #  environment:
@@ -258,6 +260,29 @@ deploy-docu-to-dev:
     - docker pull $CONTAINER_IMAGE_DOCUMENTATION_PATH
 #    - docker inspect --format='{{index .RepoDigests 0}}' $CONTAINER_IMAGE_DOCUMENTATION_PATH
 
+  allow_failure: true
+#  only:
+#    - develop
+
+
+# Push the Branche :latest image only if all Specs have been passed.
+# Loads a SSH Private key from the CI variable
+# a key which is allowed to login into the Dev Server using SSH
+#
+# POC ONLY, may not get response if deployment failed!!
+#
+# SSH Infos see: http://docs.gitlab.com/ce/ci/ssh_keys/README.html
+deploy-docu-to-dev:
+  <<: *artifacts-always
+  <<: *docker-login
+  stage: deploy-docs
+  tags:
+    - docker
+#  environment:
+#    name: Develop Doc Preview
+#    url: https://docs.dev.youngsolutions.ch
+  script:
+     - env
 #    # Install ssh-agent if not already installed, it is required by Docker.
 #    # (change apt-get to yum if you use a CentOS-based image)
 #    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
