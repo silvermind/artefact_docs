@@ -40,6 +40,7 @@ group :development, :test do
 
   gem 'bundler-audit'
   gem 'rubocop'
+  gem 'reek'
 end
 
 group :development do
