@@ -9,6 +9,7 @@ variables:
   CONTAINER_IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME-test"
 #  CONTAINER_FEATURE_IMAGE_NAME: "$CI_BUILD_REF_NAME-test"
   CONTAINER_IMAGE_RELEASE_NAME: "$CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME-latest"
+  CONTAINER_IMAGE_DOCUMENTATION_PATH: "$CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME-docs"
 
 #  CONTAINER_IMAGE_DOCUMENTATION_NAME: "$CI_BUILD_REF_NAME-docs"
 #  CONTAINER_IMAGE_DOCUMENTATION_PATH: "$CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME-docs"
@@ -18,9 +19,9 @@ stages:
   - build
   - quality
   - test
-  - docs
   - release
   - deploy
+  - docs
 
 .docker-login: &docker-login
   before_script:
@@ -171,6 +172,29 @@ test-bundle-audit:
   - bundle exec bundle-audit check --update
   allow_failure: false
 
+release-image:
+  <<: *docker-login
+  tags:
+    - docker
+  stage: release
+  script:
+    - docker pull $CONTAINER_IMAGE_NAME
+    - docker tag $CONTAINER_IMAGE_NAME $CONTAINER_IMAGE_RELEASE_NAME
+    - docker push $CONTAINER_IMAGE_RELEASE_NAME
+#  only:
+#    - master
+
+#deploy_production:
+#  stage: deploy
+#  environment:
+#    name: production
+#    url: https://demo.e-request.ch
+#  script:
+#    - cd ctron && ./ctron_exec_prod.sh
+#  only:
+#    - master
+
+
 docs-build-doc:
   image: "$CONTAINER_IMAGE_NAME"
   stage: docs
@@ -199,24 +223,67 @@ docs-build-doc:
     - doc/debug_doc/
     expire_in: 3h
 
-release-image:
+
+# Push the Branche :latest image only if all Specs have been passed.
+# Loads a SSH Private key from the CI variable
+# a key which is allowed to login into the Dev Server using SSH
+#
+# POC ONLY, may not get response if deployment failed!!
+#
+# SSH Infos see: http://docs.gitlab.com/ce/ci/ssh_keys/README.html
+deploy-docu-to-dev:
+  <<: *artifacts-always
   <<: *docker-login
+  stage: docs
   tags:
     - docker
-  stage: release
-  script:
-    - docker pull $CONTAINER_IMAGE_NAME
-    - docker tag $CONTAINER_IMAGE_NAME $CONTAINER_IMAGE_RELEASE_NAME
-    - docker push $CONTAINER_IMAGE_RELEASE_NAME
-#  only:
-#    - master
-
-#deploy_production:
-#  stage: deploy
 #  environment:
-#    name: production
-#    url: https://demo.e-request.ch
-#  script:
-#    - cd ctron && ./ctron_exec_prod.sh
+#    name: Develop Doc Preview
+#    url: https://docs.dev.youngsolutions.ch
+  script:
+    - mkdir ./static-html-docs
+    # copy frameset and build infos
+#    - cp -Rv ./doc/static-html-docs/* ./static-html-docs/
+    - cp ./README.md ./static-html-docs/README.md
+    - cp ./BUILD.txt ./static-html-docs/BUILD.txt
+
+    # collect all artifacts stored in tmp
+#    - cp -Rv ./coverage/ ./static-html-docs/
+#    - cp -Rv ./tmp/* ./static-html-docs/
+#    - cp ./rails_best_practices_output.html ./static-html-docs/rails_best_practices.html
+
+    # build documentation container using Dockerfile.documentation with path ./static-html-docs
+    - docker build -f Dockerfile.documentation --pull --tag $CONTAINER_IMAGE_DOCUMENTATION_PATH .
+    - docker push $CONTAINER_IMAGE_DOCUMENTATION_PATH
+    - docker pull $CONTAINER_IMAGE_DOCUMENTATION_PATH
+#    - docker inspect --format='{{index .RepoDigests 0}}' $CONTAINER_IMAGE_DOCUMENTATION_PATH
+
+#    # Install ssh-agent if not already installed, it is required by Docker.
+#    # (change apt-get to yum if you use a CentOS-based image)
+#    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+#
+#    # Run ssh-agent (inside the build environment)
+#    - eval $(ssh-agent -s)
+#
+#    # Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
+#    - echo "$SSH_PRIVATE_KEY_TO_DEV_SERVER" > /tmp/deploy_key
+#    - chmod 700 /tmp/deploy_key
+#    - ssh-add /tmp/deploy_key
+#
+#    # For Docker builds disable host key checking. Be aware that by adding that
+#    # you are suspectible to man-in-the-middle attacks.
+#    # WARNING: Use this only with the Docker executor, if you use it with shell
+#    # you will overwrite your user's SSH config.
+#    - mkdir -p ~/.ssh
+#    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+
+    # TEST
+#    - ssh -T  default@i.dev.youngsolutions.ch
+
+    # Execute Deploy Script on Dev Server
+#    - ssh default@i.dev.youngsolutions.ch /home/default/deploy_documentation_script.sh $CONTAINER_IMAGE_DOCUMENTATION_NAME
+
+  allow_failure: true
 #  only:
-#    - master
+#    - develop
+

@@ -1,0 +1,10 @@
+# container listen to port 80 by default
+FROM registry.kubernetes.ch/silvermind/artefact_docs:master-latest
+
+COPY ./static-html-docs /myapp/public/docs/
+
+# to build locally
+# docker build . --file Dockerfile.documentation
+
+# start image locally
+# docker run --name documentation-nginx -d -p 8080:80 fdcb75aa7324
