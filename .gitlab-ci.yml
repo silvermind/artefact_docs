@@ -223,9 +223,9 @@ collect-docs:
   allow_failure: false
   artifacts:
     when: always
-#    paths:
-#    - doc/debug_doc/
-#    expire_in: 3h
+    paths:
+    - tmp/
+    expire_in: 1h
 
 
 # Push the Branche :latest image only if all Specs have been passed.
@@ -245,6 +245,7 @@ build-docs:
 #    name: Develop Doc Preview
 #    url: https://docs.dev.youngsolutions.ch
   script:
+    - ls -la ./tmp
     - mkdir ./static-html-docs
     # copy frameset and build infos
 #    - cp -Rv ./doc/static-html-docs/* ./static-html-docs/
@@ -252,6 +253,8 @@ build-docs:
     - cp ./BUILD.txt ./static-html-docs/BUILD.txt
 
     # collect all artifacts stored in tmp
+    - echo "IT WORKS 2" > ./tmp/app_about2.txt
+
 #    - cp -Rv ./coverage/ ./static-html-docs/
     - cp -Rv ./tmp/* ./static-html-docs/
 #    - cp ./rails_best_practices_output.html ./static-html-docs/rails_best_practices.html
