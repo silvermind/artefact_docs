@@ -108,45 +108,45 @@ test-todo-notes:
   - bundle exec rails notes
   allow_failure: true
 
-test-specs:
-  image: "$CONTAINER_IMAGE_NAME"
-  tags:
-    - docker
-  stage: test
-  variables:
-    # shared rails app configs
-    DATABASE_URL: postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres
-    DOMAIN_NAME: docker-tests.example.com
-    DATABASE_CLEANER_ALLOW_REMOTE_DATABASE_URL: 'true'
-  script:
-  - export DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres
-  - bundle exec rake db:migrate
-  - bundle exec rspec . --seed 62376
-#  - docker run -e RAILS_ENV=test -e DOMAIN_NAME=docker-tests.example.com -e DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres $CONTAINER_IMAGE_NAME bundle exec rake db:migrate
-#  - docker run -e RAILS_ENV=test -e DOMAIN_NAME=docker-tests.example.com -e  -e DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres $CONTAINER_IMAGE_NAME bundle exec rspec . --seed 62376
-  allow_failure: false
-  artifacts:
-    when: always
-    paths:
-    - doc/debug_doc/code_coverage/
-    expire_in: 3h
-
-test-specs-rnd-seed:
-#  <<: *artifacts-always
-  image: "$CONTAINER_IMAGE_NAME"
-  tags:
-    - docker
-  stage: test
-  variables:
-    # shared rails app configs
-    DOMAIN_NAME: docker-tests.example.com
-
-    DATABASE_CLEANER_ALLOW_REMOTE_DATABASE_URL: 'true'
-  script:
-  - export DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres
-  - bundle exec rake db:migrate
-  - bundle exec rspec . --order rand
-  allow_failure: false
+#test-specs:
+#  image: "$CONTAINER_IMAGE_NAME"
+#  tags:
+#    - docker
+#  stage: test
+#  variables:
+#    # shared rails app configs
+#    DATABASE_URL: postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres
+#    DOMAIN_NAME: docker-tests.example.com
+#    DATABASE_CLEANER_ALLOW_REMOTE_DATABASE_URL: 'true'
+#  script:
+#  - export DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres
+#  - bundle exec rake db:migrate
+#  - bundle exec rspec . --seed 62376
+##  - docker run -e RAILS_ENV=test -e DOMAIN_NAME=docker-tests.example.com -e DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres $CONTAINER_IMAGE_NAME bundle exec rake db:migrate
+##  - docker run -e RAILS_ENV=test -e DOMAIN_NAME=docker-tests.example.com -e  -e DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres $CONTAINER_IMAGE_NAME bundle exec rspec . --seed 62376
+#  allow_failure: false
+#  artifacts:
+#    when: always
+#    paths:
+#    - doc/debug_doc/code_coverage/
+#    expire_in: 3h
+#
+#test-specs-rnd-seed:
+##  <<: *artifacts-always
+#  image: "$CONTAINER_IMAGE_NAME"
+#  tags:
+#    - docker
+#  stage: test
+#  variables:
+#    # shared rails app configs
+#    DOMAIN_NAME: docker-tests.example.com
+#
+#    DATABASE_CLEANER_ALLOW_REMOTE_DATABASE_URL: 'true'
+#  script:
+#  - export DATABASE_URL=postgres://postgres:postgres@$POSTGRES_PORT_5432_TCP_ADDR:5432/postgres
+#  - bundle exec rake db:migrate
+#  - bundle exec rspec . --order rand
+#  allow_failure: false
 
 test-rubocop:
   <<: *artifacts-always
