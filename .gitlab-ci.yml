@@ -158,7 +158,7 @@ test-rubocop:
   stage: test
   script:
   - bundle exec rubocop
-  allow_failure: false
+  allow_failure: true
 
 test-bundle-audit:
   <<: *artifacts-always
