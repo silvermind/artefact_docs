@@ -7,7 +7,7 @@
 
 <% @grouped_links.each do |group, links| %>
 
-  <h3>Group: <%= group %></h3>
+  <% if @grouped_links.count > 1%><h3>Group: <%= group %></h3><% end %>
 
   <% links.each do |link| %>
     <%#= link.inspect %>
