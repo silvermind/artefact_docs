@@ -64,6 +64,7 @@ build-image:
 
     - "echo 'Generated BUILD.txt:'"
     - cat BUILD.txt
+    - ls -la
     - docker build -f Dockerfile --pull --tag $CONTAINER_IMAGE_NAME .
     - docker push $CONTAINER_IMAGE_NAME
     - docker pull $CONTAINER_IMAGE_NAME
@@ -73,10 +74,10 @@ build-image:
     paths:
     - BUILD.txt
     expire_in: 1 week
-  cache:
-    key: "$CI_COMMIT_REF_SLUG" # per-branch caching
-    paths:
-      - tmp/cache/assets # used by sprockets for assets
+#  cache:
+#    key: "$CI_COMMIT_REF_SLUG" # per-branch caching
+#    paths:
+#      - tmp/cache/assets # used by sprockets for assets
 
 #test-hamllint:
 #  tags:
