@@ -19,6 +19,6 @@ class FramesController < ApplicationController
       links << { url: "/docs/#{dir}/", title: dir.camelcase, group: 'A' }
     end
 
-    @grouped_links = links.sort_by {|a | a[:group] }.sort_by {|a | a[:title] }.group_by { |i| i[:group] }
+    @grouped_links = links.sort_by { |a| a[:group] }.sort_by { |a| a[:title] }.group_by { |i| i[:group] }
   end
 end
