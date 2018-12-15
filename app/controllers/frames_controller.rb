@@ -18,25 +18,23 @@ class FramesController < ApplicationController
       had_index = false
       # list all files in this subfolder directly
       Dir.glob(level_1_dir.join('*.*')).each do |file|
-        filename = File.basename(file, ".*")
+        filename = File.basename(file, '.*')
         had_index = true if filename == 'index'
         links << { url: public_path(file), title: filename.camelcase, group: level_1_dir.split.last.to_s }
       end
 
-      unless had_index
-        # check if we have an index.html - if so, show this and skip subfolders
-        level_2_dirs.each do |level_2|
-          level_2_dir = Pathname(level_2)
-          dir = level_2_dir.split.last.to_s
-          links << { url: public_path(level_2_dir), title: dir.camelcase, group: level_1_dir.split.last.to_s }
-        end
-      end
+      next if had_index
 
+      # check if we have an index.html - if so, show this and skip subfolders
+      level_2_dirs.each do |level_2|
+        level_2_dir = Pathname(level_2)
+        dir = level_2_dir.split.last.to_s
+        links << { url: public_path(level_2_dir), title: dir.camelcase, group: level_1_dir.split.last.to_s }
+      end
     end
 
     @grouped_links = links.sort_by { |a| a[:group] }.group_by { |i| i[:group] }
   end
-
 
   private
 
@@ -48,5 +46,4 @@ class FramesController < ApplicationController
   def doc_root
     Rails.root.join('public', 'docs')
   end
-
 end
