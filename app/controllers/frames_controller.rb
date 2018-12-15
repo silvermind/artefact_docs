@@ -28,7 +28,7 @@ class FramesController < ApplicationController
         level_2_dirs.each do |level_2|
           level_2_dir = Pathname(level_2)
           dir = level_2_dir.split.last.to_s
-          links << { url: public_path(level_2_dir), title: "DIR" + dir.camelcase, group: level_1_dir.split.last.to_s }
+          links << { url: public_path(level_2_dir), title: dir.camelcase, group: level_1_dir.split.last.to_s }
         end
       end
 
